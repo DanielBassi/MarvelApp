@@ -6,6 +6,7 @@ using MarvelApp.Application.Ports;
 using MarvelApp.Domain.Ports;
 using MarvelApp.Infrastructure.Adapters;
 using MarvelApp.Infrastructure.Persistence;
+using MarvelApp.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -57,6 +58,10 @@ namespace MarvelApp.API.Extensions
 
         public static IServiceCollection AddAuthenticationWithJwt(this IServiceCollection services, IConfiguration config)
         {
+            var jwtSection = config.GetSection("jwt");
+            services.Configure<JwtSettings>(jwtSection);
+            var jwtSettings = jwtSection.Get<JwtSettings>();
+
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -70,10 +75,10 @@ namespace MarvelApp.API.Extensions
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = config["jwt:Issuer"],
-                    ValidAudience = config["jwt:Audience"],
+                    ValidIssuer = jwtSettings?.Issuer,
+                    ValidAudience = jwtSettings?.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(config["jwt:Key"] ?? ""))
+                        Encoding.UTF8.GetBytes(jwtSettings?.Key ?? ""))
                 };
             });
 
