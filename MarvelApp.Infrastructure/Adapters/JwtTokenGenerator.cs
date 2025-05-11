@@ -1,6 +1,7 @@
 ﻿using MarvelApp.Domain.Entities;
 using MarvelApp.Domain.Ports;
-using Microsoft.Extensions.Configuration;
+using MarvelApp.Infrastructure.Settings;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -10,11 +11,11 @@ namespace MarvelApp.Infrastructure.Adapters
 {
     public class JwtTokenGenerator : IJwtTokenGenerator
     {
-        private readonly IConfiguration _configuration;
+        private readonly JwtSettings jwtSettings;
 
-        public JwtTokenGenerator(IConfiguration configuration)
+        public JwtTokenGenerator(IOptions<JwtSettings> jwtOptions)
         {
-            _configuration = configuration;
+            jwtSettings = jwtOptions.Value;
         }
 
         public string GenerarToken(User user)
@@ -27,17 +28,19 @@ namespace MarvelApp.Infrastructure.Adapters
             };
 
             var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!)
+                Encoding.UTF8.GetBytes(jwtSettings.Key!)
             );
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var expires = DateTime.UtcNow.AddMinutes(jwtSettings.ExpiresInMinutes);
 
             var token = new JwtSecurityToken(
-                _configuration["Jwt:Issuer"],
-                _configuration["Jwt:Audience"],
+                jwtSettings.Issuer,
+                jwtSettings.Audience,
                 claims,
-                expires: DateTime.UtcNow.AddHours(2),
-                signingCredentials: creds);
+                expires: expires,
+                signingCredentials: creds
+            );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
