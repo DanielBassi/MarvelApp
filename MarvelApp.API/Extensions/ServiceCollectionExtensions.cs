@@ -21,6 +21,20 @@ namespace MarvelApp.API.Extensions
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();
+
+            var allowedOrigins = new[] { "http://localhost:4200" };
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("LocalCorsPolicy", policy =>
+                {
+                    policy.WithOrigins(allowedOrigins)
+                          .AllowAnyMethod()
+                          .AllowAnyHeader()
+                          .AllowCredentials();
+                });
+            });
+
             return services;
         }
 
